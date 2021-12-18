@@ -1,0 +1,131 @@
+// [PianoPlay](https://michaelecke.com/pianoplay) - Copyright (c) 2021 Rodrigo Jorge Vilar de Linares.
+
+ul {
+    height:9em;
+    width:100%;
+    margin:0 auto;
+    padding:1em 0 0 1em;
+    position:relative;
+    border:1px solid #160801;
+    border-radius:1em;
+    background:linear-gradient(45deg,#222 0%,#555 100%);
+    box-shadow:0 0 50px rgba(0,0,0,0.5) inset,0 1px rgba(212,152,125,0.2) inset,0 5px 15px rgba(0,0,0,0.5)
+  }
+  
+  li {
+    margin:0;
+    padding:0;
+    list-style:none;
+    position:relative;
+    float:left
+  }
+  
+  ul .white {
+    height:8em;
+    width: 1.92%;
+    z-index:1;
+    text-align: center;
+    line-height: 14em;
+  }
+  
+  ul .white.unpressed {
+    border-left:1px solid #bbb;
+    border-bottom:1px solid #bbb;
+    border-radius:0 0 5px 5px;
+    box-shadow:-1px 0 0 rgba(255,255,255,0.8) inset,0 0 5px #ccc inset,0 0 3px rgba(0,0,0,0.2);
+    background:linear-gradient(to bottom,#eee 0%,#fff 100%)
+  }
+  
+  ul .white.pressedkeep {
+    border-top:1px solid #777;
+    border-left:1px solid #999;
+    border-bottom:1px solid #999;
+    box-shadow:2px 0 3px rgba(0,0,0,0.1) inset,-5px 5px 20px rgba(0,0,0,0.2) inset,0 0 3px rgba(0,0,0,0.2);
+    background:linear-gradient(to bottom,#ffffff 0%,#00a0e9 100%)
+  }
+  
+  ul .white.pressed {
+    border-top:1px solid #777;
+    border-left:1px solid #999;
+    border-bottom:1px solid #999;
+    box-shadow:2px 0 3px rgba(0,0,0,0.1) inset,-5px 5px 20px rgba(0,0,0,0.2) inset,0 0 3px rgba(0,0,0,0.2);
+    background:linear-gradient(to bottom,#ffffff 0%,#33e02f 100%)
+  }
+  
+  ul .white.pressedreq {
+    border-top:1px solid #777;
+    border-left:1px solid #999;
+    border-bottom:1px solid #999;
+    box-shadow:2px 0 3px rgba(0,0,0,0.1) inset,-5px 5px 20px rgba(0,0,0,0.2) inset,0 0 3px rgba(0,0,0,0.2);
+    background:linear-gradient(to bottom,#ffffff 0%,#33e02f 50%,#bbb 100%)
+  }
+  
+  ul .white.pressedwrong {
+    border-top:1px solid #777;
+    border-left:1px solid #999;
+    border-bottom:1px solid #999;
+    box-shadow:2px 0 3px rgba(0,0,0,0.1) inset,-5px 5px 20px rgba(0,0,0,0.2) inset,0 0 3px rgba(0,0,0,0.2);
+    background:linear-gradient(to bottom,#ffffff 0%,#f32020 100%)
+  }
+  
+  ul .white.unpressedreq {
+    border-top:1px solid #777;
+    border-left:1px solid #999;
+    border-bottom:1px solid #999;
+    box-shadow:2px 0 3px rgba(0,0,0,0.1) inset,-5px 5px 20px rgba(0,0,0,0.2) inset,0 0 3px rgba(0,0,0,0.2);
+    background:linear-gradient(to bottom,#ffffff 0%,#bbb 100%)
+  }
+  
+  .black {
+    height:4em;
+    width:0.96%;
+    margin:0 0 0 -.48%;
+    z-index:2;
+    border:1px solid #000;
+    border-radius:0 0 3px 3px;
+    text-align: center;
+    line-height: 6em;
+    color: white;
+  }
+  
+  .black.unpressed {
+      box-shadow:-1px -1px 2px rgba(255,255,255,0.2) inset,0 -5px 2px 3px rgba(0,0,0,0.6) inset,0 2px 4px rgba(0,0,0,0.5);
+    background:linear-gradient(45deg,#222 0%,#555 100%)
+  }
+  
+  .black.pressedkeep {
+    box-shadow:-1px -1px 2px rgba(255,255,255,0.2) inset,0 -2px 2px 3px rgba(0,0,0,0.6) inset,0 1px 2px rgba(0,0,0,0.5);
+    background:linear-gradient(to bottom,#000000 0%,#00a0f0 25%,#00a0f0 100%)
+  }
+  
+  .black.pressed {
+    box-shadow:-1px -1px 2px rgba(255,255,255,0.2) inset,0 -2px 2px 3px rgba(0,0,0,0.6) inset,0 1px 2px rgba(0,0,0,0.5);
+    background:linear-gradient(to bottom,#000000 0%,#33e02f 25%,#33e02f 100%)
+  }
+  
+  .black.pressedreq {
+    box-shadow:-1px -1px 2px rgba(255,255,255,0.2) inset,0 -2px 2px 3px rgba(0,0,0,0.6) inset,0 1px 2px rgba(0,0,0,0.5);
+    background:linear-gradient(to bottom,#000000 0%,#33a02f 25%,#bbb 100%)
+  }
+  
+  .black.pressedwrong {
+    box-shadow:-1px -1px 2px rgba(255,255,255,0.2) inset,0 -2px 2px 3px rgba(0,0,0,0.6) inset,0 1px 2px rgba(0,0,0,0.5);
+    background:linear-gradient(to bottom,#000000 0%,#f34040 25%,#f34040 100%)
+  }
+  
+  .black.unpressedreq {
+    box-shadow:-1px -1px 2px rgba(255,255,255,0.2) inset,0 -2px 2px 3px rgba(0,0,0,0.6) inset,0 1px 2px rgba(0,0,0,0.5);
+    background:linear-gradient(to bottom,#000000 0%,#bbb 25%,#bbb 100%)
+  }
+  
+  .a, .b, .d, .e, .g {
+    margin:0 0 0 -.48%
+  }
+  
+  ul li:first-child {
+    border-radius:5px 0 5px 5px
+  }
+  
+  ul li:last-child {
+    border-radius:0 5px 5px 5px
+  }

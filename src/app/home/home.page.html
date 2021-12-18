@@ -1,0 +1,135 @@
+<!-- [PianoPlay](https://michaelecke.com/pianoplay) - Copyright (c) 2021 Rodrigo Jorge Vilar de Linares. -->
+
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <input class="ion-hide" #f type="file" (change)="osmdLoadFiles($event.target.files)">
+    <ion-grid *ngIf="!isMobileLayout">
+      <ion-row>
+        <ion-col size="4">
+          <ion-button color="dark" size="small" disabled={{running}} (click)="f.click()">{{'open'| translate}}</ion-button>
+          <ion-button color="dark" disabled={{!fileLoaded||running}} size="small" (click)="osmdPractice()">{{'start'| translate}}</ion-button>
+          <ion-button color="dark" disabled={{!fileLoaded||running}} size="small" (click)="osmdPlay()">{{'play'| translate}}</ion-button>
+          <ion-button color="dark" disabled={{!running}} size="small" (click)="osmdCursorStop()">{{'stop'| translate}}</ion-button><br>
+          <ion-checkbox (ionChange)="osmdColor($event.detail.checked)" color="dark" disabled={{running}}></ion-checkbox>
+          <ion-label color="dark">{{'color'| translate}}</ion-label>&nbsp;
+          <ion-checkbox [(ngModel)]="checkboxKeyboard" color="dark"></ion-checkbox>
+          <ion-label color="dark">{{'keyboard'| translate}}</ion-label>
+        </ion-col>
+        <ion-col size="5">
+        <ion-row>
+          <img  src="assets/icon/music-box-multiple-outline.svg" style="width:24px;height:24px;">
+          <ion-input [(ngModel)]="inputMeasure.lower" (change)="updateLowerMeasure($event.target.value)"></ion-input>
+          <ion-input [(ngModel)]="inputMeasure.upper" (change)="updateUpperMeasure($event.target.value)"></ion-input>
+          <img src="assets/icon/music-box-multiple-outline.svg" style="width:48px;height:48px;">
+          <img src="assets/icon/repeat-off.svg" style="width:48px;height:48px;" [hidden]="repeatValue!==0">
+          <img src="assets/icon/repeat-once.svg" style="width:48px;height:48px;" [hidden]="repeatValue!==1">
+          <img src="assets/icon/repeat.svg" style="width:48px;height:48px;" [hidden]="repeatValue < 2">
+          <ion-input [(ngModel)]="repeatText" (change)="updateRepeat($event.target.value)"></ion-input>
+          <img src="assets/icon/magnify-scan.svg" style="width:48px;height:48px;">
+          <ion-input [(ngModel)]="zoomText" (change)="updateZoom($event.target.value)"></ion-input>
+          <img src="assets/icon/metronome.svg" style="width:48px;height:48px;">
+          <ion-input [(ngModel)]="speedText" (change)="updateSpeed($event.target.value)"></ion-input>
+        </ion-row>
+        </ion-col>
+        <ion-col size="3">
+          <img src="assets/i18n/gb.svg" class="flag" (click)="useLanguage('gb')">&nbsp;
+          <img src="assets/i18n/fr.svg" class="flag" (click)="useLanguage('fr')">&nbsp;
+          <img src="assets/i18n/de.svg" class="flag" (click)="useLanguage('de')">&nbsp;
+          <img src="assets/i18n/it.svg" class="flag" (click)="useLanguage('it')">&nbsp; 
+          <img src="assets/i18n/es.svg" class="flag" (click)="useLanguage('es')">&nbsp;
+        </ion-col>
+        
+      </ion-row>
+    </ion-grid>
+    <ion-grid *ngIf="isMobileLayout">
+      <ion-row>
+        <ion-col size="7">
+          <input class="ion-hide" #f type="file" (change)="osmdLoadFiles($event.target.files)">
+          <ion-button color="dark" size="small" disabled={{running}} (click)="f.click()">{{'open'| translate}}</ion-button>
+          <ion-button color="dark" disabled={{!fileLoaded||running}} size="small" (click)="osmdPractice()">{{'start'| translate}}</ion-button>
+          <ion-button color="dark" disabled={{!fileLoaded||running}} size="small" (click)="osmdPlay()">{{'play'| translate}}</ion-button>
+          <ion-button color="dark" disabled={{!running}} size="small" (click)="osmdCursorStop()">{{'stop'| translate}}</ion-button><br>
+        </ion-col>
+        <ion-col size="5">
+          <img src="assets/i18n/gb.svg" class="flag" (click)="useLanguage('gb')">&nbsp;
+          <img src="assets/i18n/fr.svg" class="flag" (click)="useLanguage('fr')">&nbsp;
+          <img src="assets/i18n/de.svg" class="flag" (click)="useLanguage('de')">&nbsp;
+          <img src="assets/i18n/it.svg" class="flag" (click)="useLanguage('it')">&nbsp; 
+          <img src="assets/i18n/es.svg" class="flag" (click)="useLanguage('es')">&nbsp;
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="false">
+  <div style="margin: 5%;">
+    <ion-label *ngIf="fileLoadError" color="danger">
+      <strong>{{'errorFile'| translate}}</strong><br><br>
+    </ion-label>
+  </div> 
+  <div style="background-color: white;" id="osmdContainer"></div>
+  <div *ngIf="!fileLoaded" style="margin: 5%;">
+    <ion-label *ngIf="!midiAvailable" color="danger">
+      <strong>{{'errorMidi'| translate}}</strong><br><br>
+    </ion-label> 
+    <ion-label id="instructions">
+    <strong>{{'openYourScore'| translate}}</strong><br><br>
+    {{'instructions1'| translate}}<br>
+    {{'instructions2a'| translate}}<ion-button color="dark" size="small" (click)="f.click()">{{'open'| translate}}</ion-button>{{'instructions2b'| translate}}<a href="https://musicxml.com/music-in-musicxml/" target="_blank"><strong> musicxml.com </strong></a><br>
+    &nbsp;&nbsp;e.g.:<br>
+    &nbsp;&nbsp;<ion-button color="dark" size="small" (click)="osmdLoadURL('https://michaelecke.com/pianoplay/assets/scores/October_Autumn_Song_from_Tchaikovskys_The_Seasons.mxl')">October</ion-button>
+    <ion-button color="dark" size="small" (click)="osmdLoadURL('https://michaelecke.com/pianoplay/assets/scores/Opus_27_No_2_Moonlight_Sonata_1st_movement.mxl')">Moonlight Sonata</ion-button><br>
+    &nbsp;&nbsp;<ion-button color="dark" size="small" (click)="osmdLoadURL('https://michaelecke.com/pianoplay/assets/scores/Passacaglia.mxl')">Passacaglia</ion-button>
+    <ion-button color="dark" size="small" (click)="osmdLoadURL('https://michaelecke.com/pianoplay/assets/scores/Prlude_No._4_in_E_Minor_Op._28_-_Frdric_Chopin.mxl')">Prelude in E Minor</ion-button><br><br>
+    {{'instructions3a'| translate}}<ion-button color="dark" size="small" disabled={{!fileLoaded}} (click)="osmdCursorStart()">{{'start'| translate}}</ion-button>{{'instructions3b'| translate}}<br><br><br>
+    <span [hidden]="isMobileLayout">{{'instructions4a'| translate}}<ion-checkbox checked color="dark" disabled></ion-checkbox>{{'instructions4b'| translate}}<br></span>
+    <span [hidden]="isMobileLayout">{{'instructions5a'| translate}}<img slot="start" src="assets/icon/music-box-multiple-outline.svg" style="width:24px;height:24px;">{{'instructions5b'| translate}}<br><br><br></span>
+    {{'instructions6a'| translate}}<a href="https://michaelecke.com" target="_blank"><strong>{{'openYourEyes'| translate}}</strong> ({{'photography'| translate}})</a>{{'instructions6b'| translate}}<br><br><br>
+    {{'instructions7'| translate}}<a href="mailto:rvilarl@gmail.com?subject=PianoPlay"><strong>rvilarl@gmail.com</strong></a><br><br>
+    </ion-label>
+</div>
+</ion-content>
+<ion-footer *ngIf="!isMobileLayout">
+  <ion-toolbar>
+    <app-piano-keyboard *ngIf="checkboxKeyboard"></app-piano-keyboard>
+    <ion-grid> 
+    <ion-row>
+      <ion-col size="3">
+        <ion-checkbox disabled={{running}} [(ngModel)]="checkboxStaveUp" color="dark"></ion-checkbox>
+        <ion-label color="dark">{{'upperStave'| translate}}</ion-label>
+      </ion-col>
+      <ion-col size="5">
+      </ion-col>
+      <ion-col size="4">
+        <ion-label>{{'midi'| translate}}: {{midiDevice}}</ion-label>
+      </ion-col>
+    </ion-row>
+    <ion-row>
+      <ion-col size="3">
+        <ion-checkbox disabled={{running}} [(ngModel)]="checkboxStaveDown" color="dark"></ion-checkbox>
+        <ion-label color="dark">{{'lowerStave'| translate}}</ion-label>
+      </ion-col>
+      <ion-col size="5">
+      </ion-col>
+      <ion-col size="4">
+        <a href="https://michaelecke.com" target="_blank" color="secundary"><strong>{{'openYourEyes'| translate}}</strong> ({{'photography'| translate}})</a>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+</ion-toolbar>
+</ion-footer>
+<ion-footer *ngIf="isMobileLayout">
+  <ion-toolbar>
+  <ion-grid> 
+    <ion-row>
+      <ion-col size="4">
+        <ion-label>{{'midi'| translate}}: {{midiDevice}}</ion-label>
+      </ion-col>
+      <ion-col size="8">
+        <a href="https://michaelecke.com" target="_blank" color="secundary"><strong>{{'openYourEyes'| translate}}</strong> ({{'photography'| translate}})</a>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+</ion-toolbar>
+</ion-footer>

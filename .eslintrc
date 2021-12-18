@@ -1,0 +1,49 @@
+{
+  "root": true,
+  "env": { "browser": true, "node": true },
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "project": "tsconfig.json",
+    "extraFileExtensions": [".mjs"]
+  },
+  "plugins": ["@typescript-eslint", "prettier", "simple-import-sort", "import"],
+  "rules": {
+    "no-console": "warn",
+    "prettier/prettier": "warn",
+    "simple-import-sort/imports": "warn",
+    "simple-import-sort/exports": "warn",
+    "import/first": "error",
+    "import/no-duplicates": "error",
+    "import/newline-after-import": "warn"
+  },
+  "overrides": [
+    {
+      "files": ["**/*.ts"],
+      "extends": [
+        "eslint:recommended",
+        "prettier",
+        "plugin:@typescript-eslint/eslint-recommended",
+        "plugin:@typescript-eslint/recommended"
+      ],
+      "rules": {
+        "@typescript-eslint/no-inferrable-types": "off",
+        "simple-import-sort/imports": [
+          "warn"
+        ]
+      }
+    },
+    {
+      "files": ["src/**/*.js"],
+      "extends": ["eslint:recommended", "prettier"]
+    },
+    {
+      "files": ["tests/**/*.js"],
+      "extends": ["eslint:recommended", "prettier"],
+      "rules": {
+        "no-restricted-globals": 0,
+        "no-undef": 0,
+        "no-undef-init": 0
+      }
+    }
+  ]
+}

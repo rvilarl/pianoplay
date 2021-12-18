@@ -1,0 +1,52 @@
+// [PianoPlay](https://michaelecke.com/pianoplay) - Copyright (c) 2021 Rodrigo Jorge Vilar de Linares.
+
+#container {
+  text-align: center;
+
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+#container strong {
+  font-size: 20px;
+  line-height: 26px;
+}
+
+#container p {
+  font-size: 16px;
+  line-height: 22px;
+
+  color: #8c8c8c;
+
+  margin: 0;
+}
+
+#container a {
+  text-decoration: none;
+}
+
+* {
+  box-sizing:border-box
+}
+
+body {
+  margin:0;
+  background:#222
+}
+
+ion-checkbox {
+  vertical-align: middle;
+}
+
+ion-input{
+  border: 1px solid #f1f1f1;
+  width: 50em;
+}
+
+.flag {
+  width: 32px;
+  height: 24px;
+}
