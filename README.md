@@ -1,9 +1,9 @@
 # Piano Play
 Open your score and have fun.
 
-I am waiting to get VexFlow 4.0 and the associated migration of OSMD released.
+In COVID time I decided to learn playing piano and I decided to make a program to learn reading scores.
 
-In the meanwhile everyone is welcomed to try the software at
+Everyone is welcomed to try the software at
 
 https://michaelecke.com/pianoplay/
 
