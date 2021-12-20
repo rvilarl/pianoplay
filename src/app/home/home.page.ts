@@ -598,7 +598,7 @@ export class HomePageComponent implements OnInit {
   }
 
   // Initialize MIDI event listeners
-  // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+  // eslint-disable-next-line
   midiSuccess(access: any): void {
     access;
 
