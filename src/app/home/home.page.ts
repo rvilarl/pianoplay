@@ -22,7 +22,7 @@ import MIDIOutput = WebMidi.MIDIOutput;
 })
 export class HomePageComponent implements OnInit {
   @ViewChild(IonContent, { static: false }) content!: IonContent;
-  @ViewChild(PianoKeyboardComponent) private pianoKeyboard!: PianoKeyboardComponent;
+  @ViewChild(PianoKeyboardComponent) private pianoKeyboard?: PianoKeyboardComponent;
   openSheetMusicDisplay!: OpenSheetMusicDisplay;
 
   // Music Sheet GUI
