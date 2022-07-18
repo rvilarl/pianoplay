@@ -15,6 +15,7 @@
           "options": {
             "allowedCommonJsDependencies": [
               "automation-events",
+              "events",
               "webmidi"
             ],
             "outputPath": "www",
