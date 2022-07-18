@@ -671,7 +671,7 @@ export class HomePageComponent implements OnInit {
       // Maintain wake lock for 2 minutes
       clearTimeout(this.wakeLockTimer);
       this.wakeLockTimer = window.setTimeout(() => {
-        if (this.wakeLockObj != null) this.wakeLockObj.release();
+        if (this.wakeLockObj) this.wakeLockObj.release();
       }, 120000);
     }
   }
