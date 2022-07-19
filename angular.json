@@ -1,7 +1,6 @@
 {
   "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
   "version": 1,
-  "defaultProject": "app",
   "newProjectRoot": "projects",
   "projects": {
     "app": {
@@ -14,12 +13,18 @@
         "build": {
           "builder": "@angular-devkit/build-angular:browser",
           "options": {
+            "allowedCommonJsDependencies": [
+              "automation-events",
+              "events",
+              "webmidi"
+            ],
             "outputPath": "www",
             "baseHref": "/pianoplay/",
             "index": "src/index.html",
             "main": "src/main.ts",
             "polyfills": "src/polyfills.ts",
             "tsConfig": "tsconfig.app.json",
+            "optimization": false,
             "assets": [
               {
                 "glob": "**/*",
@@ -171,7 +176,10 @@
     }
   },
   "cli": {
-    "defaultCollection": "@angular-eslint/schematics"
+    "schematicCollections": [
+      "@angular-eslint/schematics"
+    ],
+    "analytics": false
   },
   "schematics": {
     "@ionic/angular-toolkit:component": {

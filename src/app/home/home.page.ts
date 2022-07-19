@@ -9,6 +9,12 @@ import { OpenSheetMusicDisplay } from 'opensheetmusicdisplay';
 import { NotesService } from '../notes.service';
 import { PianoKeyboardComponent } from '../piano-keyboard/piano-keyboard.component';
 
+import MIDIAccess = WebMidi.MIDIAccess;
+import MIDIConnectionEvent = WebMidi.MIDIConnectionEvent;
+import MIDIMessageEvent = WebMidi.MIDIMessageEvent;
+import MIDIInput = WebMidi.MIDIInput;
+import MIDIOutput = WebMidi.MIDIOutput;
+
 @Component({
   selector: 'app-home',
   templateUrl: 'home.page.html',
@@ -16,7 +22,7 @@ import { PianoKeyboardComponent } from '../piano-keyboard/piano-keyboard.compone
 })
 export class HomePageComponent implements OnInit {
   @ViewChild(IonContent, { static: false }) content!: IonContent;
-  @ViewChild(PianoKeyboardComponent) private pianoKeyboard!: PianoKeyboardComponent;
+  @ViewChild(PianoKeyboardComponent) private pianoKeyboard?: PianoKeyboardComponent;
   openSheetMusicDisplay!: OpenSheetMusicDisplay;
 
   // Music Sheet GUI
@@ -40,17 +46,13 @@ export class HomePageComponent implements OnInit {
   speedText: string = '100%';
 
   // wakeLock used with Midi Input
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  wakeLockObj: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  wakeLockTimer: any;
+  wakeLockObj?: WakeLockSentinel;
+  wakeLockTimer?: number;
 
   // MIDI Devices
-  midiAvailable = true;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  midiInputs: any[] = [];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  midiOutputs: any[] = [];
+  midiAvailable = false;
+  midiInputs: MIDIInput[] = [];
+  midiOutputs: MIDIOutput[] = [];
   midiDevice = 'none';
 
   // Initialize maps of notes comming from MIDI Input
@@ -500,16 +502,14 @@ export class HomePageComponent implements OnInit {
 
   // Hide all feedback elements
   osmdHideFeedback(): void {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    [].forEach.call(document.querySelectorAll('.feedback'), function (el: any) {
+    document.querySelectorAll<HTMLElement>('.feedback').forEach(function (el) {
       el.style.visibility = 'hidden';
     });
   }
 
   // Hide all feedback elements
   osmdShowFeedback(): void {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    [].forEach.call(document.querySelectorAll('.feedback'), function (el: any) {
+    document.querySelectorAll<HTMLElement>('.feedback').forEach(function (el) {
       el.style.visibility = 'visible';
     });
   }
@@ -545,31 +545,23 @@ export class HomePageComponent implements OnInit {
 
   // Initialize MIDI
   midiSetup(): void {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if ((navigator as any)['requestMIDIAccess']) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (navigator as any)['requestMIDIAccess']({ sysex: true }).then(this.midiSuccess.bind(this), () => {
-        this.midiAvailable = false;
-      });
-    } else {
+    navigator.requestMIDIAccess?.({ sysex: true }).then(this.midiSuccess.bind(this), () => {
       this.midiAvailable = false;
-    }
+    });
   }
 
   // Register MIDI Inputs' handlers and outputs
-  // eslint-disable-next-line
-  midiInitDev(access: any): void {
-    let iter = access.inputs.values();
+  midiInitDev(access: MIDIAccess): void {
+    const iterInputs = access.inputs.values();
     const inputs = [];
-    for (let o = iter.next(); !o.done; o = iter.next()) {
-      if (!o.value.name.includes('Midi Through')) inputs.push(o.value);
+    for (let o = iterInputs.next(); !o.done; o = iterInputs.next()) {
+      if (!o.value.name?.includes('Midi Through')) inputs.push(o.value);
     }
     this.midiDevice = 'none';
 
     for (let port = 0; port < inputs.length; port++) {
       this.midiDevice = inputs[port].name + ' (' + inputs[port].manufacturer + ')';
-      // eslint-disable-next-line
-      inputs[port].onmidimessage = (event: any) => {
+      inputs[port].onmidimessage = (event: MIDIMessageEvent) => {
         const NOTE_ON = 9;
         const NOTE_OFF = 8;
         const cmd = event.data[0] >> 4;
@@ -586,10 +578,10 @@ export class HomePageComponent implements OnInit {
       };
     }
 
-    iter = access.outputs.values();
+    const iterOutputs = access.outputs.values();
     const outputs = [];
-    for (let o = iter.next(); !o.done; o = iter.next()) {
-      if (!o.value.name.includes('Midi Through')) outputs.push(o.value);
+    for (let o = iterOutputs.next(); !o.done; o = iterOutputs.next()) {
+      if (!o.value.name?.includes('Midi Through')) outputs.push(o.value);
     }
 
     this.midiInputs = inputs;
@@ -598,23 +590,20 @@ export class HomePageComponent implements OnInit {
   }
 
   // Initialize MIDI event listeners
-  // eslint-disable-next-line
-  midiSuccess(access: any): void {
-    access;
+  midiSuccess(access: MIDIAccess): void {
+    this.midiAvailable = true;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    access.onstatechange = (event: any) => {
-      this.midiInitDev(event.target);
+    access.onstatechange = (event: MIDIConnectionEvent) => {
+      this.midiInitDev(event.target as MIDIAccess);
     };
 
     this.midiInitDev(access);
   }
 
   // Press note on Ouput MIDI Device
-  midiPressNote(pitch: number, velocity?: number): void {
+  midiPressNote(pitch: number, velocity: number): void {
     this.mapNotesAutoPressed.set((pitch - 12).toFixed(), 1);
     const iter = this.midiOutputs.values();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     for (let o = iter.next(); !o.done; o = iter.next()) {
       o.value.send([0x90, pitch, velocity], window.performance.now());
     }
@@ -630,7 +619,6 @@ export class HomePageComponent implements OnInit {
   midiReleaseNote(pitch: number): void {
     this.mapNotesAutoPressed.delete((pitch - 12).toFixed());
     const iter = this.midiOutputs.values();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     for (let o = iter.next(); !o.done; o = iter.next()) {
       o.value.send([0x80, pitch, 0x00], window.performance.now());
     }
@@ -668,14 +656,12 @@ export class HomePageComponent implements OnInit {
 
   // Refresh wakelock for two minutes
   refreshWakeLock(): void {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if ((navigator as any)['wakeLock']) {
-      if (this.wakeLockObj == null) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (navigator as any)['wakeLock'].request('screen').then((wakeLock: any) => {
+    if (navigator.wakeLock) {
+      if (!this.wakeLockObj) {
+        navigator.wakeLock.request('screen').then((wakeLock) => {
           this.wakeLockObj = wakeLock;
           this.wakeLockObj.addEventListener('release', () => {
-            this.wakeLockObj = null;
+            this.wakeLockObj = undefined;
           });
           //})
           //.catch((err) => {
@@ -684,8 +670,8 @@ export class HomePageComponent implements OnInit {
       }
       // Maintain wake lock for 2 minutes
       clearTimeout(this.wakeLockTimer);
-      this.wakeLockTimer = setTimeout(() => {
-        if (this.wakeLockObj != null) this.wakeLockObj.release();
+      this.wakeLockTimer = window.setTimeout(() => {
+        if (this.wakeLockObj) this.wakeLockObj.release();
       }, 120000);
     }
   }

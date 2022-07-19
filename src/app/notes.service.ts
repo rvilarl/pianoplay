@@ -135,7 +135,7 @@ export class NotesService {
   }
 
   // Update note status for piano keyboard
-  autoplayRequired(midiPress: (note: number, velocity?: number) => void, midiRelease: (note: number) => void): void {
+  autoplayRequired(midiPress: (note: number, velocity: number) => void, midiRelease: (note: number) => void): void {
     // Release notes no longer required
     for (const [key] of this.mapPressed) {
       if (!this.mapRequired.has(key)) {

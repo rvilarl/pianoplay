@@ -9,16 +9,16 @@ import { StatusBar } from '@ionic-native/status-bar/ngx';
 import { AppComponent } from './app.component';
 
 describe('AppComponent', () => {
-  let statusBarSpy;
-  let splashScreenSpy;
-  let platformReadySpy;
-  let platformSpy;
+  let statusBarSpy: StatusBar;
+  let splashScreenSpy: SplashScreen;
+  let platformReadySpy: Promise<string>;
+  let platformSpy: Platform;
 
   beforeEach(async(() => {
-    statusBarSpy = jasmine.createSpyObj('StatusBar', ['styleDefault']);
-    splashScreenSpy = jasmine.createSpyObj('SplashScreen', ['hide']);
-    platformReadySpy = Promise.resolve();
-    platformSpy = jasmine.createSpyObj('Platform', { ready: platformReadySpy });
+    statusBarSpy = jasmine.createSpyObj<StatusBar>('StatusBar', ['styleDefault']);
+    splashScreenSpy = jasmine.createSpyObj<SplashScreen>('SplashScreen', ['hide']);
+    platformReadySpy = Promise.resolve('dom');
+    platformSpy = jasmine.createSpyObj<Platform>('Platform', { ready: platformReadySpy });
 
     TestBed.configureTestingModule({
       declarations: [AppComponent],
