@@ -4,7 +4,7 @@ import { ChangeDetectorRef, Component, OnInit, ViewChild } from '@angular/core';
 import { IonContent } from '@ionic/angular';
 import { TranslateService } from '@ngx-translate/core';
 import { Piano } from '@tonejs/piano';
-import { OpenSheetMusicDisplay } from 'opensheetmusicdisplay';
+import * as vexml from '@stringsync/vexml';
 
 import { NotesService } from '../notes.service';
 import { PianoKeyboardComponent } from '../piano-keyboard/piano-keyboard.component';
@@ -23,7 +23,6 @@ import MIDIOutput = WebMidi.MIDIOutput;
 export class HomePageComponent implements OnInit {
   @ViewChild(IonContent, { static: false }) content!: IonContent;
   @ViewChild(PianoKeyboardComponent) private pianoKeyboard?: PianoKeyboardComponent;
-  openSheetMusicDisplay!: OpenSheetMusicDisplay;
 
   // Music Sheet GUI
   isMobileLayout = false;
@@ -89,24 +88,11 @@ export class HomePageComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.openSheetMusicDisplay = new OpenSheetMusicDisplay('osmdContainer');
-    this.openSheetMusicDisplay.setOptions({
-      backend: 'svg',
-      drawTitle: true,
-      coloringMode: this.checkboxColor ? 1 : 0,
-      followCursor: true,
-      useXMLMeasureNumbers: false,
-      cursorsOptions: [
-        { type: 1, color: '#33e02f', alpha: 0.8, follow: true },
-        { type: 2, color: '#ccc', alpha: 0.8, follow: false },
-      ],
-    });
     // Adjust zoom for mobile devices
     if (window.innerWidth <= 991) {
       this.isMobileLayout = true;
       this.zoomValue = 0.7;
       this.zoomText = this.zoomValue * 100 + '%';
-      this.openSheetMusicDisplay.zoom = this.zoomValue;
     }
     window.onresize = () => (this.isMobileLayout = window.innerWidth <= 991);
     this.midiSetup();
@@ -125,8 +111,6 @@ export class HomePageComponent implements OnInit {
     if (this.zoomValue < 0.1) this.zoomValue = 0.1;
     if (this.zoomValue > 2) this.zoomValue = 2;
     this.zoomText = (this.zoomValue * 100).toFixed(0) + '%';
-    this.openSheetMusicDisplay.Zoom = this.zoomValue;
-    this.openSheetMusicDisplay.render();
   }
 
   // GUI Play speed
@@ -187,72 +171,25 @@ export class HomePageComponent implements OnInit {
   // toggle between blackWhite and Color
   osmdColor(checked: boolean): void {
     this.checkboxColor = checked;
-    this.openSheetMusicDisplay.setOptions({
-      backend: 'svg',
-      drawTitle: true,
-      followCursor: true,
-      coloringMode: this.checkboxColor ? 1 : 0,
-      useXMLMeasureNumbers: false,
-      cursorsOptions: [
-        { type: 1, color: '#33e02f', alpha: 0.8, follow: true },
-        { type: 2, color: '#ccc', alpha: 0.8, follow: false },
-      ],
-    });
-    this.openSheetMusicDisplay.render();
   }
 
   // Load selected file
   osmdLoadFiles(files: Blob[]): void {
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-
-      const reader = new FileReader();
-      reader.onload = (event: ProgressEvent<FileReader>) => {
-        // Load Music Sheet
-        this.openSheetMusicDisplay.load(event.target?.result?.toString() ?? '').then(
-          () => {
-            this.openSheetMusicDisplay.zoom = this.zoomValue;
-            this.openSheetMusicDisplay.render();
-            this.fileLoaded = true;
-            this.fileLoadError = false;
-            this.osmdReset();
-          },
-          () => {
-            this.fileLoaded = false;
-            this.fileLoadError = true;
-          }
-        );
-      };
-      reader.readAsBinaryString(file);
+      const div = document.getElementById('osmdContainer');
+      const score = vexml.renderMXL(file, div as HTMLDivElement);
     }
   }
 
   // Load selected file
   osmdLoadURL(url: string): void {
     // Load Music Sheet
-    this.openSheetMusicDisplay.load(url).then(
-      () => {
-        this.openSheetMusicDisplay.zoom = this.zoomValue;
-        this.openSheetMusicDisplay.render();
-        this.fileLoaded = true;
-        this.fileLoadError = false;
-        this.osmdReset();
-      },
-      () => {
-        this.fileLoaded = false;
-        this.fileLoadError = true;
-      }
-    );
   }
 
   // Move cursor to next note
   osmdCursorMoveNext(index: number): boolean {
     //if (!this.running) return false;
-    this.openSheetMusicDisplay.cursors[index].next();
-    // Move to first valid measure
-    if (this.inputMeasure.lower > this.openSheetMusicDisplay.cursors[index].iterator.CurrentMeasureIndex + 1) {
-      return this.osmdCursorMoveNext(index);
-    }
     return true;
   }
 
@@ -261,58 +198,11 @@ export class HomePageComponent implements OnInit {
     // Required to stop next calls if stop is pressed during play
     if (!this.running) return;
     if (!this.osmdEndReached(1)) this.osmdCursorMoveNext(1);
-    let timeout = 0;
-    // if ended reached check repeat and stat or stop
-    if (this.osmdEndReached(1)) {
-      // Caculate time to end of compass
-      timeout =
-        ((this.openSheetMusicDisplay.cursors[1].iterator.CurrentMeasure.AbsoluteTimestamp.RealValue +
-          this.openSheetMusicDisplay.cursors[1].iterator.CurrentMeasure.Duration.RealValue -
-          this.openSheetMusicDisplay.cursors[1].iterator.CurrentSourceTimestamp.RealValue) *
-          4 *
-          60000) /
-        this.tempoInBPM /
-        this.speedValue;
-      setTimeout(() => {
-        if (!this.osmdEndReached(0)) this.osmdTextFeedback('&#x1F422;', 0, 40);
-        this.openSheetMusicDisplay.cursors[1].hide();
-      }, timeout);
-    } else {
-      // Move to Next
-      const it2 = this.openSheetMusicDisplay.cursors[1].iterator.clone();
-      it2.moveToNext();
-      timeout =
-        ((it2.CurrentSourceTimestamp.RealValue -
-          this.openSheetMusicDisplay.cursors[1].iterator.CurrentSourceTimestamp.RealValue) *
-          4 *
-          60000) /
-        this.tempoInBPM /
-        this.speedValue;
-      setTimeout(() => {
-        this.osmdCursorTempoMoveNext();
-      }, timeout);
-    }
-    // If auto play, then play notes
-    if (this.checkboxAutoplay) {
-      // Skip when ties only occured
-      if (this.autoplaySkip > 0) {
-        this.autoplaySkip--;
-      } else this.notesService.autoplayRequired(this.midiPressNote.bind(this), this.midiReleaseNote.bind(this));
-    }
   }
 
   osmdEndReached(cursorId: number): boolean {
     // Check end reached
     let endReached = false;
-    if (this.openSheetMusicDisplay.cursors[cursorId].iterator.EndReached) {
-      endReached = true;
-    } else {
-      const it2 = this.openSheetMusicDisplay.cursors[cursorId].iterator.clone();
-      it2.moveToNext();
-      if (it2.EndReached || this.inputMeasure.upper < it2.CurrentMeasureIndex + 1) {
-        endReached = true;
-      }
-    }
     return endReached;
   }
 
@@ -321,55 +211,11 @@ export class HomePageComponent implements OnInit {
     // Required to stop next calls if stop is pressed during play
     if (!this.running) return;
     // if ended reached check repeat and stat or stop
-    if (this.osmdEndReached(0)) {
-      const timeout =
-        ((this.openSheetMusicDisplay.cursors[0].iterator.CurrentMeasure.AbsoluteTimestamp.RealValue +
-          this.openSheetMusicDisplay.cursors[0].iterator.CurrentMeasure.Duration.RealValue -
-          this.openSheetMusicDisplay.cursors[0].iterator.CurrentSourceTimestamp.RealValue) *
-          4 *
-          60000) /
-        this.tempoInBPM /
-        this.speedValue;
-      this.openSheetMusicDisplay.cursors[0].hide();
-      setTimeout(() => {
-        if (this.repeatValue > 0) {
-          this.repeatValue--;
-          this.repeatText = this.repeatValue.toFixed(0);
-          this.osmdCursorStart();
-        } else {
-          this.osmdCursorStop();
-          this.repeatValue = this.repeatCfg;
-          this.repeatText = this.repeatValue.toFixed(0);
-        }
-      }, timeout);
-      return;
-    }
-    // Move to next
-    if (!this.osmdCursorMoveNext(0)) return;
-    // Calculate notes
-    this.notesService.calculateRequired(
-      this.openSheetMusicDisplay.cursors[0],
-      this.checkboxStaveUp,
-      this.checkboxStaveDown
-    );
-    this.tempoInBPM = this.notesService.tempoInBPM;
-    // Update keyboard
-    if (this.pianoKeyboard) this.pianoKeyboard.updateNotesStatus();
-
-    // If ties only move to next ans skip one additional autoplay
-    if (this.notesService.checkRequired()) {
-      this.autoplaySkip++;
-      this.osmdCursorPlayMoveNext();
-    }
   }
 
   // Stop cursor
   osmdCursorStop(): void {
     this.checkboxAutoplay = false;
-    this.openSheetMusicDisplay.cursors.forEach((cursor) => {
-      cursor.hide();
-      cursor.reset();
-    });
     this.osmdShowFeedback();
     this.running = false;
     this.notesService.clear();
@@ -385,9 +231,7 @@ export class HomePageComponent implements OnInit {
     this.checkboxStaveUp = true;
     this.checkboxStaveDown = true;
     this.inputMeasure.lower = 1;
-    this.inputMeasure.upper = this.openSheetMusicDisplay.Sheet.SourceMeasures.length;
     this.inputMeasureRange.lower = 1;
-    this.inputMeasureRange.upper = this.openSheetMusicDisplay.Sheet.SourceMeasures.length;
   }
 
   // Play
@@ -416,75 +260,12 @@ export class HomePageComponent implements OnInit {
   // Resets the cursor to the first note
   osmdCursorStart(): void {
     this.content.scrollToTop();
-    this.openSheetMusicDisplay.cursors.forEach((cursor, index) => {
-      if (index != 0) cursor.show();
-      cursor.reset();
-    });
-    // Additional tasks in case of new start, not required in repetition
-    if (this.repeatValue == this.repeatCfg) {
-      this.notesService.clear();
-      // free auto pressed notes
-      for (const [key] of this.mapNotesAutoPressed) {
-        this.midiReleaseNote(parseInt(key) + 12);
-      }
-    }
-
-    this.osmdHideFeedback();
-
-    if (this.inputMeasure.lower > this.openSheetMusicDisplay.cursors[0].iterator.CurrentMeasureIndex + 1) {
-      if (!this.osmdCursorMoveNext(0)) return;
-      this.osmdCursorMoveNext(1);
-    }
-    // Calculate first notes
-    this.notesService.calculateRequired(
-      this.openSheetMusicDisplay.cursors[0],
-      this.checkboxStaveUp,
-      this.checkboxStaveDown,
-      true
-    );
-    this.tempoInBPM = this.notesService.tempoInBPM;
     // Update keyboard
     if (this.pianoKeyboard) this.pianoKeyboard.updateNotesStatus();
     this.osmdCursorStart2();
   }
 
   osmdCursorStart2(): void {
-    if (this.startFlashCount > 0) {
-      if (this.openSheetMusicDisplay.cursors[0].hidden) this.openSheetMusicDisplay.cursors[0].show();
-      else this.openSheetMusicDisplay.cursors[0].hide();
-      this.startFlashCount--;
-      setTimeout(() => {
-        this.osmdCursorStart2();
-      }, 1000);
-      return;
-    }
-    this.startFlashCount = 0;
-    this.openSheetMusicDisplay.cursors[0].show();
-    this.timePlayStart = Date.now();
-    // Skip initial rests
-    if (this.notesService.checkRequired()) {
-      this.autoplaySkip++;
-      this.osmdCursorPlayMoveNext();
-    }
-    // if required play
-    if (this.checkboxAutoplay) {
-      // Skip when ties only occured
-      if (this.autoplaySkip > 0) {
-        this.autoplaySkip--;
-      } else this.notesService.autoplayRequired(this.midiPressNote.bind(this), this.midiReleaseNote.bind(this));
-    }
-    const it2 = this.openSheetMusicDisplay.cursors[0].iterator.clone();
-    it2.moveToNext();
-    const timeout =
-      ((it2.CurrentSourceTimestamp.RealValue -
-        this.openSheetMusicDisplay.cursors[0].iterator.CurrentSourceTimestamp.RealValue) *
-        4 *
-        60000) /
-      this.tempoInBPM /
-      this.speedValue;
-    setTimeout(() => {
-      this.osmdCursorTempoMoveNext();
-    }, timeout);
   }
 
   // Remove all feedback elements
