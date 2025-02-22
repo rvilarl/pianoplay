@@ -19,7 +19,7 @@
               "webmidi"
             ],
             "outputPath": "www",
-            "baseHref": "/pianoplay/",
+            "baseHref": "/pianoplaynew/",
             "index": "src/index.html",
             "main": "src/main.ts",
             "polyfills": "src/polyfills.ts",
