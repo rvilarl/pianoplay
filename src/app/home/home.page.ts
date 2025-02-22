@@ -23,6 +23,13 @@ import MIDIOutput = WebMidi.MIDIOutput;
 export class HomePageComponent implements OnInit {
   @ViewChild(IonContent, { static: false }) content!: IonContent;
   @ViewChild(PianoKeyboardComponent) private pianoKeyboard?: PianoKeyboardComponent;
+  score?: vexml.Score;
+  cursor1?: vexml.Cursor;
+  cursor2?: vexml.Cursor;
+  cursorComponent1?: vexml.SimpleCursor;
+  cursorComponent2?: vexml.SimpleCursor;  
+  cursorHandle1: number = 0;
+  cursorHandle2: number = 0;
 
   // Music Sheet GUI
   isMobileLayout = false;
@@ -169,54 +176,80 @@ export class HomePageComponent implements OnInit {
   }
 
   // toggle between blackWhite and Color
-  osmdColor(checked: boolean): void {
+  vexmlColor(checked: boolean): void {
     this.checkboxColor = checked;
   }
 
   // Load selected file
-  osmdLoadFiles(files: Blob[]): void {
+  vexmlLoadFiles(files: Blob[]): void {
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-      const div = document.getElementById('osmdContainer');
-      const score = vexml.renderMXL(file, div as HTMLDivElement);
+      const div = document.getElementById('vexmlContainer');
+      vexml.renderMXL(file, div as HTMLDivElement).then((score) => {
+        this.score = score;
+        this.fileLoaded = true;
+        this.fileLoadError = false; // Reset error
+        this.vexmlReset();
+      }).catch(() => {
+        this.fileLoadError = true;
+      });
     }
   }
 
   // Load selected file
-  osmdLoadURL(url: string): void {
+  vexmlLoadURL(url: string): void {
     // Load Music Sheet
+    fetch(url)
+    .then(res => res.blob()) // Gets the response and returns it as a blob
+    .then(blob => {
+      const div = document.getElementById('vexmlContainer');
+      vexml.renderMXL(blob, div as HTMLDivElement).then((score) => {
+        this.score = score;
+        this.fileLoaded = true;
+        this.fileLoadError = false; // Reset error
+        this.vexmlReset();
+      }).catch(() => {
+        this.fileLoadError = true;
+      });
+    }).catch(() => {
+      this.fileLoadError = true;
+    });
   }
 
-  // Move cursor to next note
-  osmdCursorMoveNext(index: number): boolean {
-    //if (!this.running) return false;
-    return true;
-  }
 
-  // Move cursor to next note
-  osmdCursorTempoMoveNext(): void {
-    // Required to stop next calls if stop is pressed during play
-    if (!this.running) return;
-    if (!this.osmdEndReached(1)) this.osmdCursorMoveNext(1);
-  }
-
-  osmdEndReached(cursorId: number): boolean {
+  vexmlEndReached(cursorId: number): boolean {
     // Check end reached
     let endReached = false;
     return endReached;
   }
 
   // Move cursor to next note
-  osmdCursorPlayMoveNext(): void {
+  vexmlCursorPlayMoveNext(): void {
     // Required to stop next calls if stop is pressed during play
     if (!this.running) return;
     // if ended reached check repeat and stat or stop
   }
 
   // Stop cursor
-  osmdCursorStop(): void {
+  vexmlCursorStop(): void {
     this.checkboxAutoplay = false;
-    this.osmdShowFeedback();
+    this.vexmlShowFeedback();
+    if (this.cursor1) {
+      this.cursor1.removeAllEventListeners();
+      this.cursor1 = undefined;
+    }
+    if (this.cursorComponent1) {
+      this.cursorComponent1.remove();
+      this.cursorComponent1 = undefined;
+    }
+    if (this.cursor2) {
+      this.cursor2.removeAllEventListeners();
+      this.cursor2 = undefined;
+    }
+    if (this.cursorComponent2) {
+      this.cursorComponent2.remove();
+      this.cursorComponent2 = undefined;
+    }
     this.running = false;
     this.notesService.clear();
     for (const [key] of this.mapNotesAutoPressed) {
@@ -226,8 +259,8 @@ export class HomePageComponent implements OnInit {
   }
 
   // Reset selection on measures and set the cursor to the origin
-  osmdReset(): void {
-    this.osmdCursorStop();
+  vexmlReset(): void {
+    this.vexmlCursorStop();
     this.checkboxStaveUp = true;
     this.checkboxStaveDown = true;
     this.inputMeasure.lower = 1;
@@ -235,41 +268,85 @@ export class HomePageComponent implements OnInit {
   }
 
   // Play
-  osmdPlay(): void {
+  vexmlPlay(): void {
     this.running = true;
     this.autoplaySkip = 0;
-    this.osmdResetFeedback();
+    this.vexmlResetFeedback();
     this.checkboxAutoplay = true;
     this.repeatCfg = this.repeatValue;
     this.startFlashCount = 0;
-    this.osmdCursorStart();
+    this.vexmlCursorStart();
   }
 
   startFlashCount = 0;
   // Practice
-  osmdPractice(): void {
+  vexmlPractice(): void {
     this.running = true;
     this.autoplaySkip = 0;
-    this.osmdResetFeedback();
+    this.vexmlResetFeedback();
     this.checkboxAutoplay = false;
     this.repeatCfg = this.repeatValue;
     this.startFlashCount = 4;
-    this.osmdCursorStart();
+    this.vexmlCursorStart();
   }
 
   // Resets the cursor to the first note
-  osmdCursorStart(): void {
+  vexmlCursorStart(): void {
     this.content.scrollToTop();
-    // Update keyboard
+    
+    if (this.score === undefined) return;
+    console.log(this.score);
+    this.cursor1 = this.score.addCursor();
+    // Render
+    this.cursorComponent1 = vexml.SimpleCursor.render(this.score.getOverlayElement());
+
+    // Listen
+    this.cursorHandle1 = this.cursor1.addEventListener(
+      'change',
+      (e) => {
+        console.log(e);
+        if (this.cursorComponent1) {
+          this.cursorComponent1.update(e.cursorRect);
+        }
+        // The model infers its visibility via the cursorRect. It assumes you've updated appropriately.
+        if (this.cursor1 && !this.cursor1.isFullyVisible()) {
+          //cursorModel.scrollIntoView(scrollBehavior);
+        }
+      },
+      { emitBootstrapEvent: true }
+    );
+        // Update keyboard
     if (this.pianoKeyboard) this.pianoKeyboard.updateNotesStatus();
-    this.osmdCursorStart2();
+    this.vexmlCursorStart2();  
   }
 
-  osmdCursorStart2(): void {
+  vexmlCursorStart2(): void {
+    if (this.score === undefined) return;
+    this.cursor2 = this.score.addCursor();
+    // Render
+    this.cursorComponent2 = vexml.SimpleCursor.render(this.score.getOverlayElement());
+
+    // Listen
+    this.cursorHandle2 = this.cursor2.addEventListener(
+      'change',
+      (e) => {
+        if (this.cursorComponent2) {
+          this.cursorComponent2.update(e.cursorRect);
+        }
+        // The model infers its visibility via the cursorRect. It assumes you've updated appropriately.
+        if (this.cursor1 && !this.cursor1.isFullyVisible()) {
+          //cursorModel.scrollIntoView(scrollBehavior);
+        }
+        setTimeout(() => {
+          if (this.cursor2) this.cursor2.next();
+        }, (e.sequenceEntry.durationRange.end.ms - e.sequenceEntry.durationRange.start.ms)/this.speedValue);
+      },
+      { emitBootstrapEvent: true }
+    );
   }
 
   // Remove all feedback elements
-  osmdResetFeedback(): void {
+  vexmlResetFeedback(): void {
     let elems = document.getElementsByClassName('feedback');
     // Remove all elements
     while (elems.length > 0) {
@@ -282,21 +359,21 @@ export class HomePageComponent implements OnInit {
   }
 
   // Hide all feedback elements
-  osmdHideFeedback(): void {
+  vexmlHideFeedback(): void {
     document.querySelectorAll<HTMLElement>('.feedback').forEach(function (el) {
       el.style.visibility = 'hidden';
     });
   }
 
   // Hide all feedback elements
-  osmdShowFeedback(): void {
+  vexmlShowFeedback(): void {
     document.querySelectorAll<HTMLElement>('.feedback').forEach(function (el) {
       el.style.visibility = 'visible';
     });
   }
 
   // Present feedback text at cursor location
-  osmdTextFeedback(text: string, x: number, y: number): void {
+  vexmlTextFeedback(text: string, x: number, y: number): void {
     const id =
       (document.getElementById('cursorImg-0')?.style.top ?? '') +
       x +
@@ -317,7 +394,7 @@ export class HomePageComponent implements OnInit {
       elem.style.position = 'absolute';
       elem.style.zIndex = '-1';
       elem.innerHTML = text;
-      const parent = document.getElementById('osmdCanvasPage1');
+      const parent = document.getElementById('vexmlCanvasPage1');
       if (parent) parent.appendChild(elem);
       elem.style.top = parseInt(document.getElementById('cursorImg-0')?.style.top ?? '') - 40 - y + 'px';
       elem.style.left = parseInt(document.getElementById('cursorImg-0')?.style.left ?? '') + x + 'px';
@@ -418,11 +495,11 @@ export class HomePageComponent implements OnInit {
 
     // Key wrong pressed
     if (!this.notesService.getMapRequired().has(name)) {
-      this.osmdTextFeedback('&#x1F4A9;', 0, 20);
+      this.vexmlTextFeedback('&#x1F4A9;', 0, 20);
     }
 
     if (this.pianoKeyboard) this.pianoKeyboard.updateNotesStatus();
-    if (this.notesService.checkRequired()) this.osmdCursorPlayMoveNext();
+    if (this.notesService.checkRequired()) this.vexmlCursorPlayMoveNext();
   }
 
   // Midi input note released
@@ -432,7 +509,7 @@ export class HomePageComponent implements OnInit {
     this.notesService.release(name);
 
     if (this.pianoKeyboard) this.pianoKeyboard.updateNotesStatus();
-    if (this.notesService.checkRequired()) this.osmdCursorPlayMoveNext();
+    if (this.notesService.checkRequired()) this.vexmlCursorPlayMoveNext();
   }
 
   // Refresh wakelock for two minutes
