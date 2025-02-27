@@ -295,7 +295,6 @@ export class HomePageComponent implements OnInit {
     this.content.scrollToTop();
     
     if (this.score === undefined) return;
-    console.log(this.score);
     this.cursor1 = this.score.addCursor();
     // Render
     this.cursorComponent1 = vexml.SimpleCursor.render(this.score.getOverlayElement());
@@ -304,7 +303,6 @@ export class HomePageComponent implements OnInit {
     this.cursorHandle1 = this.cursor1.addEventListener(
       'change',
       (e) => {
-        console.log(e);
         if (this.cursorComponent1) {
           this.cursorComponent1.update(e.cursorRect);
         }
@@ -330,6 +328,10 @@ export class HomePageComponent implements OnInit {
     this.cursorHandle2 = this.cursor2.addEventListener(
       'change',
       (e) => {
+        console.log(e);
+        this.notesService.calculateRequired(e,this.checkboxStaveUp,
+          this.checkboxStaveDown);
+        this.notesService.autoplayRequired(this.midiPressNote.bind(this), this.midiReleaseNote.bind(this));
         if (this.cursorComponent2) {
           this.cursorComponent2.update(e.cursorRect);
         }
@@ -338,6 +340,7 @@ export class HomePageComponent implements OnInit {
           //cursorModel.scrollIntoView(scrollBehavior);
         }
         setTimeout(() => {
+          
           if (this.cursor2) this.cursor2.next();
         }, (e.sequenceEntry.durationRange.end.ms - e.sequenceEntry.durationRange.start.ms)/this.speedValue);
       },
